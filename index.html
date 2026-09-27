@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spider-Man Interactive Birthday Experience</title>
+    <!-- Google Fonts for Stylish Look -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Pacifico&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --spidey-red: #e62429;
+            --spidey-blue: #002244;
+            --spidey-bright-blue: #1d70b8;
+            --spidey-dark: #111111;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            /* Spider-Man Theme Background */
+            background-image: url('https://media1.tenor.com/m/TFip_LxMV5IAAAAC/marvels-spider-man-marvels-spider-man2.gif');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            font-family: 'Fredoka', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .active {
+            display: flex;
+        }
+
+        /* Fade-in Animation for Screens */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.85);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        #screen3.active, #screenCongrats.active {
+            animation: fadeIn 0.9s ease-in-out forwards;
+        }
+
+        /* Vinyl Spin Animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .vinyl-cd {
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, #111 28%, #333 29%, #111 31%, var(--spidey-red) 60%, #000 100%);
+            border-radius: 50%;
+            border: 3px solid #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            margin: 0 auto 12px auto;
+        }
+
+        .vinyl-cd.spinning {
+            animation: spin 3s linear infinite;
+        }
+
+        /* Spidey Chat Bubble Styling */
+        .chat-bubble {
+            position: relative;
+            background: #ffffff;
+            border: 3px solid var(--spidey-blue);
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--spidey-blue);
+            margin-bottom: 15px;
+            box-shadow: 3px 3px 0px var(--spidey-red);
+            text-align: center;
+            border-radius: 6px;
+        }
+        .chat-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 25px;
+            width: 0;
+            height: 0;
+            border: 5px solid transparent;
+            border-top-color: var(--spidey-blue);
+            border-bottom: 0;
+        }
+        .chat-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 27px;
+            width: 0;
+            height: 0;
+            border: 3px solid transparent;
+            border-top-color: #fff;
+            border-bottom: 0;
+            z-index: 1;
+        }
+        
+        /* Heart/Spidey Icon Container */
+        .heart-container {
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.1s;
+            position: relative;
+        }
+        .heart-container img {
+            width: 110px;
+            height: auto;
+        }
+        .heart-container:active {
+            transform: scale(0.95);
+        }
+
+        /* Loading Bar Styling */
+        .loading-container {
+            width: 200px;
+            height: 16px;
+            border: 3px solid var(--spidey-blue);
+            background: #fff;
+            margin-top: 25px;
+            box-shadow: 3px 3px 0px var(--spidey-red);
+            overflow: hidden;
+            border-radius: 4px;
+        }
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--spidey-red);
+            transition: width 0.05s linear;
+        }
+
+        /* Stickers Layout (Grid) */
+        .sticker-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            justify-items: center;
+            align-items: center;
+        }
+        
+        .sticker-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .sticker-item:active {
+            transform: scale(0.93);
+        }
+
+        .sticker-container img {
+            width: 100px;
+            height: auto;
+            border: none;
+            outline: none;
+            box-shadow: none;
+        }
+
+        /* Massive Falling Celebration Effects (Spidey Theme: 🕷️🕸️❤️💙✨) */
+        .falling-heart {
+            position: absolute;
+            pointer-events: none;
+            z-index: 100;
+            text-shadow: 0 0 8px rgba(230, 36, 41, 0.9);
+        }
+
+        @keyframes massiveFall {
+            0% {
+                transform: translate(0, 0) scale(0.4) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--dx), var(--dy)) scale(1.6) rotate(var(--rot));
+                opacity: 0;
+            }
+        }
+
+        /* Modal Popup Styling */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-box {
+            background: #fff;
+            border: 4px solid var(--spidey-blue);
+            padding: 20px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 6px 6px 0px var(--spidey-red);
+            font-family: 'Fredoka', sans-serif;
+            animation: fadeIn 0.3s ease-in-out;
+            position: relative;
+            border-radius: 8px;
+        }
+
+        .close-btn {
+            background: var(--spidey-red);
+            color: #fff;
+            border: 3px solid var(--spidey-blue);
+            padding: 6px 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 3px 3px 0px var(--spidey-blue);
+            transition: transform 0.1s;
+            border-radius: 4px;
+        }
+
+        .close-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px var(--spidey-blue);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Screen 1 -->
+    <div class="screen active" id="screen1">
+        <div class="chat-bubble">🕷️ Tap The Spider-Man 🕷️</div>
+        <div class="heart-container" id="heartStep1">
+            <img src="https://media.tenor.com/Wsr1KhA7dGEAAAAi/spiderman-symbol-spider-man-across-the-spiderverse.gif" alt="Spider Logo">
+        </div>
+    </div>
+
+    <!-- Screen 2 -->
+    <div class="screen" id="screen2">
+        <div class="chat-bubble">Hold the Spider-Symbol!</div>
+        <div class="heart-container" id="heartStep2">
+            <img src="https://media.tenor.com/Pr3KMSGed4cAAAAi/logo.gif" alt="Spider Emblem">
+        </div>
+        <div class="loading-container">
+            <div class="loading-bar" id="loadingBar"></div>
+        </div>
+    </div>
+
+    <!-- Screen Congratulations (Transition Screen) -->
+    <div class="screen" id="screenCongrats">
+        <div class="chat-bubble" style="font-family: 'Pacifico', cursive; font-size: 20px; color: var(--spidey-red); padding: 15px 25px; border-width: 4px;">
+            🎉 Thwip! Awesome! <br>
+            <span style="font-size: 16px; font-family: 'Fredoka', sans-serif; color: #333;">Swinging to the next level!</span> 🕷️🚀
+        </div>
+        <div class="heart-container" style="margin: 10px 0;">
+            <img src="https://media.tenor.com/eFR4J42pMNwAAAAi/devspidey90.gif" alt="Cute Spidey" style="width: 110px;">
+        </div>
+        <button class="close-btn" id="btnNextStep" style="font-size: 16px; padding: 8px 24px;">Next ➡</button>
+    </div>
+
+    <!-- Screen 3: Stickers -->
+    <div class="screen" id="screen3">
+        <div class="sticker-container">
+            <div class="sticker-item" id="btnSurprise">
+                <div class="chat-bubble">Spidey Counter</div>
+                <img src="https://media.tenor.com/ik-bVGNIAXEAAAAi/spiderman-spider-man.gif" alt="Surprise Sticker">
+            </div>
+            <div class="sticker-item" id="btnAlbum">
+                <div class="chat-bubble">Spider Album</div>
+                <img src="https://media.tenor.com/7NFpwZkQygkAAAAi/spiderman-spider-man.gif" alt="Album Sticker">
+            </div>
+            <div class="sticker-item" id="btnMusic">
+                <div class="chat-bubble">Spider Beats</div>
+                <img src="https://media.tenor.com/D5NwrpJKNJYAAAAi/pppp.gif" alt="Music Sticker">
+            </div>
+            <div class="sticker-item" id="btnMassage">
+                <div class="chat-bubble">Web Message</div>
+                <img src="https://media.tenor.com/WxflQIGfOYkAAAAi/spider-man-no-way-home-marvel-studios.gif" alt="Massage Sticker">
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup Modal Box -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box" id="modalContentBox">
+            <!-- Dynamic Content Will Load Here -->
+        </div>
+    </div>
+
+    <!-- Image Zoom / Lightbox Modal -->
+    <div class="modal-overlay" id="zoomModalOverlay" style="z-index: 2000;">
+        <div style="position: relative; max-width: 90%; max-height: 90%; text-align: center;">
+            <img id="zoomedImg" src="" style="max-width: 100%; max-height: 80vh; border: 4px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,0.8); object-fit: contain;">
+            <br>
+            <button class="close-btn" id="closeZoom" style="background: #fff; color: #000;">ပိတ်ရန် ✖</button>
+        </div>
+    </div>
+
+    <script>
+        const screen1 = document.getElementById('screen1');
+        const screen2 = document.getElementById('screen2');
+        const screenCongrats = document.getElementById('screenCongrats');
+        const screen3 = document.getElementById('screen3');
+        
+        const heartStep1 = document.getElementById('heartStep1');
+        const heartStep2 = document.getElementById('heartStep2');
+        const loadingBar = document.getElementById('loadingBar');
+        const btnNextStep = document.getElementById('btnNextStep');
+
+        let holdTimer = null;
+        let progress = 0;
+        const duration = 1500;
+        const intervalTime = 20;
+
+        heartStep1.addEventListener('click', () => {
+            screen1.classList.remove('active');
+            screen2.classList.add('active');
+        });
+
+        function triggerCelebration() {
+            const heartEl = document.getElementById('heartStep2');
+            const rect = heartEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const symbols = ['🕷️', '🕸️', '❤️', '💙', '✨', '🔥'];
+
+            for (let i = 0; i < 120; i++) {
+                const burst = document.createElement('div');
+                burst.classList.add('falling-heart');
+                burst.innerHTML = symbols[Math.floor(Math.random() * symbols.length)];
+                
+                const dx = (Math.random() - 0.5) * window.innerWidth * 0.8; 
+                const dy = Math.random() * 500 + 300;   
+                const rot = (Math.random() - 0.5) * 720; 
+                const size = Math.random() * 24 + 16;   
+
+                burst.style.left = `${centerX}px`;
+                burst.style.top = `${centerY}px`;
+                burst.style.fontSize = `${size}px`;
+                burst.style.setProperty('--dx', `${dx}px`);
+                burst.style.setProperty('--dy', `${dy}px`);
+                burst.style.setProperty('--rot', `${rot}deg`);
+                
+                const fallDuration = Math.random() * 0.8 + 0.9; 
+                burst.style.animation = `massiveFall ${fallDuration}s cubic-bezier(0.1, 0.8, 0.3, 1) forwards`;
+
+                document.body.appendChild(burst);
+
+                setTimeout(() => {
+                    burst.remove();
+                }, fallDuration * 1000);
+            }
+        }
+
+        function startLoading(e) {
+            e.preventDefault();
+            if (holdTimer) clearInterval(holdTimer);
+
+            holdTimer = setInterval(() => {
+                progress += (intervalTime / duration) * 100;
+                loadingBar.style.width = progress + '%';
+
+                if (progress >= 100) {
+                    clearInterval(holdTimer);
+                    triggerCelebration(); 
+                    
+                    setTimeout(() => {
+                        screen2.classList.remove('active');
+                        screenCongrats.classList.add('active');
+                    }, 400);
+                }
+            }, intervalTime);
+        }
+
+        function stopLoading() {
+            if (holdTimer) {
+                clearInterval(holdTimer);
+                holdTimer = null;
+            }
+            progress = 0;
+            loadingBar.style.width = '0%';
+        }
+
+        heartStep2.addEventListener('mousedown', startLoading);
+        window.addEventListener('mouseup', stopLoading);
+        heartStep2.addEventListener('touchstart', startLoading);
+        window.addEventListener('touchend', stopLoading);
+
+        btnNextStep.addEventListener('click', () => {
+            screenCongrats.classList.remove('active');
+            screen3.classList.add('active');
+        });
+
+        // --- Custom Popup System ---
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalContentBox = document.getElementById('modalContentBox');
+        let activeIntervals = [];
+
+        function clearAllIntervals() {
+            activeIntervals.forEach(interval => clearInterval(interval));
+            activeIntervals = [];
+        }
+
+        function openModal(htmlContent) {
+            clearAllIntervals();
+            modalContentBox.innerHTML = htmlContent + '<br><button class="close-btn" id="closeModalBtn">ပိတ်မည်</button>';
+            modalOverlay.style.display = 'flex';
+
+            document.getElementById('closeModalBtn').addEventListener('click', closeModalAction);
+        }
+
+        function closeModalAction() {
+            modalOverlay.style.display = 'none';
+            stopAudioPlayer();
+            clearAllIntervals();
+        }
+
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                closeModalAction();
+            }
+        });
+
+        // --- Image Zoom / Lightbox System ---
+        const zoomModalOverlay = document.getElementById('zoomModalOverlay');
+        const zoomedImg = document.getElementById('zoomedImg');
+        const closeZoom = document.getElementById('closeZoom');
+
+        function openZoom(imgSrc) {
+            zoomedImg.src = imgSrc;
+            zoomModalOverlay.style.display = 'flex';
+        }
+
+        closeZoom.addEventListener('click', () => {
+            zoomModalOverlay.style.display = 'none';
+        });
+
+        zoomModalOverlay.addEventListener('click', (e) => {
+            if (e.target === zoomModalOverlay) {
+                zoomModalOverlay.style.display = 'none';
+            }
+        });
+
+        window.zoomPhoto = function(element) {
+            openZoom(element.src);
+        };
+
+        // Helper: Typewriter Effect Function
+        function typeWriter(elementId, text, speed = 40) {
+            let i = 0;
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.innerHTML = "";
+            function typing() {
+                if (i < text.length) {
+                    el.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(typing, speed);
+                }
+            }
+            typing();
+        }
+
+        // 1. Surprise Popup with Years/Months/Days Birthday Counter & Conditional Birthday Message
+        document.getElementById('btnSurprise').addEventListener('click', () => {
+            openModal(`
+                <h3 style="color: var(--spidey-red); margin: 5px 0 8px 0;">🕷️ Spidey Birthday Counter 🕷️</h3>
+                <img src="https://media.tenor.com/1XmZK8fejbsAAAAi/sappy-seal.gif" alt="Cute Gif" style="width: 65px; height: auto; margin-bottom: 5px;">
+                <div style="font-size: 11px; color: #555; margin-bottom: 6px; font-weight: bold;">Since February 23, 2012 (2012.2.23)</div>
+                <div id="birthdayCounter" style="background: linear-gradient(135deg, #fff0f1, #e8f0fe); border: 2px dashed var(--spidey-red); padding: 10px; font-weight: bold; font-size: 12px; color: #333; box-shadow: 3px 3px 0px var(--spidey-blue); margin-top: 5px; line-height: 1.5; border-radius: 6px;">
+                    Loading time...
+                </div>
+                <div id="typedBirthdayText" style="margin-top: 10px; font-size: 12px; color: var(--spidey-red); font-family: monospace; min-height: 35px; font-weight: bold;"></div>
+            `);
+
+            function updateCounter() {
+                const birthDate = new Date(2012, 1, 23); // Month index 1 = February
+                const now = new Date();
+                
+                let years = now.getFullYear() - birthDate.getFullYear();
+                let months = now.getMonth() - birthDate.getMonth();
+                let days = now.getDate() - birthDate.getDate();
+
+                if (days < 0) {
+                    months--;
+                    let prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+                    days += prevMonth.getDate();
+                }
+                if (months < 0) {
+                    years--;
+                    months += 12;
+                }
+
+                const counterEl = document.getElementById('birthdayCounter');
+                if (counterEl) {
+                    counterEl.innerHTML = `🎂 ${years} Years : ${months} Months : ${days} Days 🎂`;
+                }
+            }
+
+            updateCounter();
+            const timer = setInterval(updateCounter, 1000);
+            activeIntervals.push(timer);
+
+            setTimeout(() => {
+                const now = new Date();
+                const month = now.getMonth(); // 1 = February
+                const date = now.getDate();
+                
+                // Calculate age dynamically for any year
+                let age = now.getFullYear() - 2012;
+
+                function getOrdinal(n) {
+                    const s = ["th", "st", "nd", "rd"],
+                          v = n % 100;
+                    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+                }
+
+                let message = "";
+                // Checks if current date is February 23 (Birthday)
+                if (month === 1 && date === 23) {
+                    message = `Happy ${getOrdinal(age)} Birthday! 🎂🎉 Wishing you web-slinging joy today and always!`;
+                } else {
+                    message = "With great power comes great happiness. Counting down to your next magical birthday! ✨🕷️";
+                }
+
+                typeWriter('typedBirthdayText', message, 35);
+            }, 300);
+        });
+
+        // 2. Album Popup
+        document.getElementById('btnAlbum').addEventListener('click', () => {
+            openModal(`
+                <h3 style="color: var(--spidey-red); margin-top: 0; margin-bottom: 8px;">📖 Spider-Verse Photobooth</h3>
+                <div style="font-size: 11px; color: #555; margin-bottom: 8px;">(ပုံများကို နှိပ်၍ အသေးစိတ်ကြည့်နိုင်သည် 🔍)</div>
+                <div style="display: flex; gap: 8px; background: #eef2f7; padding: 10px; border: 3px solid var(--spidey-blue); border-radius: 6px; justify-content: center; align-items: center;">
+                    <div style="display: flex; gap: 6px;">
+                        <img src="https://i.ibb.co/7dZHbSSJ/IMG-20260927-155635.jpg" onclick="zoomPhoto(this)" style="width: 55px; height: 160px; object-fit: cover; border: 2px solid var(--spidey-blue); cursor: pointer; background: #fff; padding: 2px; box-shadow: 2px 2px 0px var(--spidey-red);">
+                        <img src="https://i.ibb.co/s9m7Xb2Y/IMG-20260927-155622-561.jpg" onclick="zoomPhoto(this)" style="width: 55px; height: 160px; object-fit: cover; border: 2px solid var(--spidey-blue); cursor: pointer; background: #fff; padding: 2px; box-shadow: 2px 2px 0px var(--spidey-red);">
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; background: #fff; padding: 6px; border: 2px solid var(--spidey-blue); box-shadow: 2px 2px 0px var(--spidey-red);">
+                        <img src="https://i.ibb.co/7dvVqG1K/IMG-20260927-155622-587.jpg" onclick="zoomPhoto(this)" style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #333; cursor: pointer;">
+                        <img src="https://i.ibb.co/Mx16FJnB/IMG-20260927-155619-140.jpg" onclick="zoomPhoto(this)" style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #333; cursor: pointer;">
+                        <img src="https://i.ibb.co/prskPBnV/IMG-20260927-161433-333.jpg" onclick="zoomPhoto(this)" style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #333; cursor: pointer;">
+                        <img src="https://i.ibb.co/Z11nbZQS/IMG-20260927-155616-306.jpg" onclick="zoomPhoto(this)" style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #333; cursor: pointer;">
+                    </div>
+                </div>
+            `);
+        });
+
+        // 3. Classic Black Vinyl Record Player
+        let backgroundAudio = new Audio('https://www.image2url.com/r2/default/audio/1790500873220-9f35f42a-1c3e-435a-9cee-62c88016d5a7.mp3');
+        backgroundAudio.loop = true;
+
+        function stopAudioPlayer() {
+            backgroundAudio.pause();
+            const playBtn = document.getElementById('playPauseBtn');
+            const vinyl = document.getElementById('vinylRecord');
+            if(playBtn) playBtn.innerText = '▶ Play';
+            if(vinyl) vinyl.classList.remove('spinning');
+        }
+
+        document.getElementById('btnMusic').addEventListener('click', () => {
+            const isPlaying = !backgroundAudio.paused;
+            openModal(`
+                <h3 style="color: var(--spidey-red); margin-top: 0; margin-bottom: 8px;">💿 Spider Beats Player</h3>
+                <div style="background-image: url('https://media1.tenor.com/m/_MdYq4qUU2QAAAAC/aura.gif'); background-size: cover; background-position: center; border: 3px solid var(--spidey-blue); padding: 15px; border-radius: 8px; text-align: center; box-shadow: 4px 4px 0px var(--spidey-red); position: relative;">
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); border-radius: 6px; z-index: 1;"></div>
+                    <div style="position: relative; z-index: 2; color: #fff;">
+                        <div style="position: relative; width: 120px; height: 120px; margin: 0 auto 12px auto;">
+                            <div id="vinylRecord" class="vinyl-cd ${isPlaying ? 'spinning' : ''}">
+                                <div style="width: 40px; height: 40px; background: var(--spidey-red); border-radius: 50%; border: 2px solid #fff; display: flex; justify-content: center; align-items: center;">
+                                    <div style="width: 8px; height: 8px; background: #fff; border-radius: 50%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size: 13px; font-weight: bold; margin-bottom: 4px;">Spider-Verse Theme.mp3</div>
+                        <div style="font-size: 11px; color: #ddd; margin-bottom: 12px;">Classic Vinyl Vibes 🕷️</div>
+                        <button id="playPauseBtn" type="button" style="background: var(--spidey-red); color: #fff; border: 2px solid var(--spidey-blue); padding: 6px 16px; font-weight: bold; cursor: pointer; box-shadow: 2px 2px 0px var(--spidey-blue); border-radius: 4px;">${isPlaying ? '⏸ Pause' : '▶ Play'}</button>
+                    </div>
+                </div>
+            `);
+
+            setTimeout(() => {
+                const playBtn = document.getElementById('playPauseBtn');
+                if (playBtn) {
+                    playBtn.addEventListener('click', () => {
+                        const vinyl = document.getElementById('vinylRecord');
+                        if (backgroundAudio.paused) {
+                            backgroundAudio.play().then(() => {
+                                playBtn.innerText = '⏸ Pause';
+                                if(vinyl) vinyl.classList.add('spinning');
+                            }).catch(err => console.log("Audio play error:", err));
+                        } else {
+                            backgroundAudio.pause();
+                            playBtn.innerText = '▶ Play';
+                            if(vinyl) vinyl.classList.remove('spinning');
+                        }
+                    });
+                }
+            }, 50);
+        });
+
+        // 4. Pinned Lined Paper Message Popup with Typing Effect
+        document.getElementById('btnMassage').addEventListener('click', () => {
+            openModal(`
+                <h3 style="color: var(--spidey-red); margin-top: 0; margin-bottom: 8px;">💌 Spider-Man Message</h3>
+                <div style="position: relative; width: 100%; margin: 10px auto; padding: 5px;">
+                    <div style="position: absolute; top: 10px; left: 10px; width: calc(100% - 20px); height: calc(100% - 10px); background: repeating-conic-gradient(var(--spidey-blue) 0% 25%, #fff 0% 50%); background-size: 14px 14px; border: 2px solid var(--spidey-blue); transform: rotate(-3deg); z-index: 1;"></div>
+                    <div style="position: relative; background: #fdfbf7; border: 3px solid var(--spidey-blue); padding: 22px 14px 14px 14px; box-shadow: 3px 3px 0px var(--spidey-red); transform: rotate(1deg); z-index: 2; background-image: repeating-linear-gradient(0deg, transparent, transparent 23px, #d0e1f9 23px, #d0e1f9 24px);">
+                        <div style="position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 26px; z-index: 3;">🕷️</div>
+                        <div id="typedLoveMessage" style="text-align: left; font-size: 13px; line-height: 24px; color: #222; font-family: monospace; min-height: 90px; overflow-y: auto;">
+                        </div>
+                    </div>
+                </div>
+            `);
+
+            setTimeout(() => {
+                const messageText = "i miss your presence. i miss having you around,seeing your name on my phone, and i could still reach you. \n\ni miss the comfort of having you beside me, even in the smallest and \n\nnow i try my best to make you feel better than last time❤️🕷️";
+                typeWriter('typedLoveMessage', messageText, 30);
+            }, 250);
+        });
+    </script>
+
+</body>
+</html>
